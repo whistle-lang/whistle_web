@@ -1,10 +1,26 @@
+#[macro_use]
 use wasm_bindgen::prelude::wasm_bindgen;
-
+use whistle_core::lexer::*;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn add(a: i32, b: i32) -> i32 {
-  a + b
+pub fn lex(text: String) -> String {
+    let lexer = Lexer::new(&text);
+    let mut toks = Vec::new();
+    for tok in lexer {
+      match tok {
+        Ok(tok) => {
+          println!("{:?}", tok);
+          toks.push(tok.clone())
+        },
+        Err(err) => {
+          println!("{:?}", err);
+          break;
+        }
+      }
+    }
+
+    format!("{:?}", toks)
 }

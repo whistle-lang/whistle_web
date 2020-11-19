@@ -1,0 +1,5 @@
+[package]
+name = "whistle_core"
+version = "0.1.0"
+authors = ["Filippo Rossi", "Elias Sjögreen"]
+edition = "2018"

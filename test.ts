@@ -1,9 +1,9 @@
 import { assertEquals } from "./test_deps.ts";
-import { add } from "./mod.ts";
+import { lex } from "./mod.ts";
 
 Deno.test({
-  name: "add",
+  name: "lex",
   fn: () => {
-    assertEquals(add(1, 1), 2);
+    console.log(lex("val x: i32 = 1 + 2 * 2 ** 2"));
   },
 });

@@ -80,6 +80,7 @@ version = "0.1.3"
 dependencies = [
  "wasm-bindgen",
  "wee_alloc",
+ "whistle_core",
 ]
 
 [[package]]
@@ -147,6 +148,10 @@ dependencies = [
  "memory_units",
  "winapi",
 ]
+
+[[package]]
+name = "whistle_core"
+version = "0.1.0"
 
 [[package]]
 name = "winapi"

@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 wasm-bindgen = "0.2.68"
 wee_alloc = { version = "0.4.5", optional = true }
+whistle_core = { path = "./src/core/" }
 
 [profile.release]
 lto = true
