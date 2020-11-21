@@ -1,6 +1,7 @@
 #[macro_use]
 use wasm_bindgen::prelude::wasm_bindgen;
 use whistle_core::lexer::*;
+use whistle_core::parser::*;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -23,4 +24,11 @@ pub fn lex(text: String) -> String {
     }
 
     format!("{:?}", toks)
+}
+#[wasm_bindgen]
+pub fn parse(text: String) -> String {
+  let lexer = Lexer::new(&text);
+  let mut parser = Parser::from(lexer);
+  let ast = parse_grammar(&mut parser);
+  format!("{:#?}", ast)
 }

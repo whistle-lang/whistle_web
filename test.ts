@@ -1,9 +1,11 @@
 import { assertEquals } from "./test_deps.ts";
-import { lex } from "./mod.ts";
+import { lex, parse } from "./mod.ts";
 
 Deno.test({
   name: "lex",
   fn: () => {
-    console.log(lex("val x: i32 = 1 + 2 * 2 ** 2"));
+    let code = "val x: i32 = 1 + 2 * 2 ** 2"
+    console.log(`lexer: ${lex(code)}`);
+    console.log(`parser: ${parse(code)}`);
   },
 });
