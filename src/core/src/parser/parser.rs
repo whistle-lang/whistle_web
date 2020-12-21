@@ -1,4 +1,4 @@
-use crate::lexer::{Lexer, Token};
+pub use crate::lexer::{Lexer, Token};
 
 #[derive(Debug, Clone)]
 pub struct Parser {
@@ -67,7 +67,7 @@ impl Parser {
     false
   }
 
-  pub fn is_tok_at(&self, tok: Token, offset: isize) -> bool {
+  pub fn is_tok_eq(&self, tok: Token, offset: isize) -> bool {
     if let Some(curr) = self.peek_offset(offset) {
       if tok == *curr {
         return true;
@@ -79,40 +79,30 @@ impl Parser {
 
   pub fn step(&mut self) {
     if self.within() {
-      // println!("idx {}, tok {:?}", self.index, self.peek());
       self.index += 1;
     }
   }
 
   pub fn step_peek(&mut self) -> Option<&Token> {
-    self.step();
+    if self.within() {
+      self.index += 1;
+    }
+
     self.peek_offset(-1)
   }
 
   pub fn eat_type(&mut self, tok: Token) -> Option<&Token> {
-    // let clone = tok.clone();
     if self.is_type(tok) {
       self.step_peek()
     } else {
-      /* println!(
-        "Expected type {:?} but got type {:?} instead",
-        clone,
-        self.peek()
-      ); */
       None
     }
   }
 
   pub fn eat_tok(&mut self, tok: Token) -> Option<&Token> {
-    // let clone = tok.clone();
     if self.is_tok(tok) {
       self.step_peek()
     } else {
-      /* println!(
-        "Expected token {:?} but got token {:?} instead",
-        clone,
-        self.peek()
-      ); */
       None
     }
   }
@@ -132,28 +122,18 @@ impl Parser {
     }
   }
 
-  pub fn check<P, T>(&mut self, parse: P) -> Option<T>
+  pub fn or<P1, P2, T>(&mut self, a: P1, b: P2) -> Option<T>
   where
-    P: Fn(&mut Parser) -> Option<T>,
+    P1: Fn(&mut Parser) -> Option<T>,
+    P2: Fn(&mut Parser) -> Option<T>,
   {
-    let pre = self.index;
-    let ret = parse(self);
-    self.index = pre;
-
-    ret
-  }
-
-  pub fn or<P, T>(&mut self, parsers: Vec<P>) -> Option<T>
-  where
-    P: Fn(&mut Parser) -> Option<T>,
-  {
-    for parser in parsers {
-      if let Some(val) = self.maybe(parser) {
-        return Some(val);
-      }
+    if let Some(val) = self.maybe(a) {
+      Some(val)
+    } else if let Some(val) = self.maybe(b) {
+      Some(val)
+    } else {
+      None
     }
-
-    None
   }
 
   pub fn repeating<P, T>(&mut self, parse: P) -> Vec<T>
@@ -163,7 +143,7 @@ impl Parser {
     let mut res = Vec::new();
 
     while let Some(val) = self.maybe(parse) {
-      res.push(val);
+      res.push(val)
     }
 
     res
@@ -175,12 +155,13 @@ impl Parser {
   {
     let mut res = Vec::new();
 
-    while let Some(val) = self.maybe(parse) {
+    loop {
       let clone = token.clone();
-      res.push(val);
-
-      if !self.is_tok_at(clone, 1) {
+      if self.is_tok_eq(clone, 0) {
         break;
+      }
+      if let Some(val) = parse(self) {
+        res.push(val);
       }
     }
 

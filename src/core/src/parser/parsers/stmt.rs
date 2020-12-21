@@ -1,20 +1,24 @@
 use super::expr::*;
 use super::ident::*;
-use crate::lexer::*;
+use crate::lexer::Tip;
 use crate::parser::ast::*;
 use crate::parser::Parser;
+use crate::lexer::*;
 
 pub fn parse_stmt(parser: &mut Parser) -> Option<Stmt> {
   match parser.peek() {
-    Some(Token::Keyword(Keyword::If)) => parse_if_stmt(parser),
-    Some(Token::Keyword(Keyword::While)) => parse_while_stmt(parser),
-    Some(Token::Keyword(Keyword::Continue)) => parse_continue_stmt(parser),
-    Some(Token::Keyword(Keyword::Break)) => parse_break_stmt(parser),
-    Some(Token::Keyword(Keyword::Return)) => parse_return_stmt(parser),
-    Some(Token::Keyword(Keyword::Var)) => parse_var_decl(parser),
-    Some(Token::Keyword(Keyword::Val)) => parse_val_decl(parser),
-    Some(Token::Keyword(Keyword::Fun)) => parse_fun_decl(parser),
-    Some(Token::Keyword(Keyword::Import)) => parse_import(parser),
+    Some(Token::Keyword(keyword)) => match keyword {
+      Keyword::If => parse_if_stmt(parser),
+      Keyword::While => parse_while_stmt(parser),
+      Keyword::Continue => parse_continue_stmt(parser),
+      Keyword::Break => parse_break_stmt(parser),
+      Keyword::Return => parse_return_stmt(parser),
+      Keyword::Var => parse_var_decl(parser),
+      Keyword::Val => parse_val_decl(parser),
+      Keyword::Fun => parse_fun_decl(parser),
+      Keyword::Import => parse_import(parser),
+      _ => None,
+    },
     Some(Token::Tip(_)) => parse_tip(parser),
     Some(Token::Punc(Punc::LeftBrace)) => parse_block_stmt(parser),
     _ => parse_expr_stmt(parser),
@@ -25,12 +29,9 @@ pub fn parse_if_stmt(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Keyword(Keyword::If)).is_some() {
     if let Some(cond) = parse_expr(parser) {
       if let Some(then_stmt) = parse_stmt(parser) {
-        let cond = Box::new(cond);
-        let then_stmt = Box::new(then_stmt);
-
         return Some(Stmt::If {
-          cond,
-          then_stmt,
+          cond: Box::new(cond),
+          then_stmt: Box::new(then_stmt),
           else_stmt: parse_else_stmt(parser),
         });
       }
@@ -52,15 +53,13 @@ pub fn parse_else_stmt(parser: &mut Parser) -> Option<Box<Stmt>> {
 
 pub fn parse_while_stmt(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Keyword(Keyword::While)).is_some() {
-    let cond = if let Some(cond) = parser.maybe(parse_expr) {
-      Some(Box::new(cond))
-    } else {
-      None
-    };
-    if let Some(do_stmt) = parse_stmt(parser) {
-      let do_stmt = Box::new(do_stmt);
-
-      return Some(Stmt::While { cond, do_stmt });
+    if let Some(cond) = parse_expr(parser) {
+      if let Some(do_stmt) = parse_stmt(parser) {
+        return Some(Stmt::While {
+          cond: Some(Box::new(cond)),
+          do_stmt: Box::new(do_stmt),
+        });
+      }
     }
   }
 
@@ -110,9 +109,10 @@ pub fn parse_var_decl(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Keyword(Keyword::Var)).is_some() {
     if let Some(ident_typed) = parse_ident_typed(parser) {
       if let Some(value) = parse_assign(parser) {
-        let val = Box::new(value);
-
-        return Some(Stmt::VarDecl { ident_typed, val });
+        return Some(Stmt::VarDecl {
+          ident_typed,
+          val: Box::new(value),
+        });
       }
     }
   }
@@ -124,9 +124,10 @@ pub fn parse_val_decl(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Keyword(Keyword::Val)).is_some() {
     if let Some(ident_typed) = parse_ident_typed(parser) {
       if let Some(value) = parse_assign(parser) {
-        let val = Box::new(value);
-
-        return Some(Stmt::ValDecl { ident_typed, val });
+        return Some(Stmt::ValDecl {
+          ident_typed,
+          val: Box::new(value),
+        });
       }
     }
   }
@@ -147,7 +148,10 @@ pub fn parse_tip(parser: &mut Parser) -> Option<Stmt> {
 
 pub fn parse_block_stmt(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Punc(Punc::LeftBrace)).is_some() {
-    let stmts = parser.repeating(parse_stmt);
+    let stmts = parser.until_is(
+      |parser| parse_stmt(parser),
+      Token::Punc(Punc::RightBrace),
+    );
     if parser.eat_tok(Token::Punc(Punc::RightBrace)).is_some() {
       return Some(Stmt::Block(stmts));
     }
@@ -159,18 +163,16 @@ pub fn parse_block_stmt(parser: &mut Parser) -> Option<Stmt> {
 pub fn parse_fun_decl(parser: &mut Parser) -> Option<Stmt> {
   if parser.eat_tok(Token::Keyword(Keyword::Fun)).is_some() {
     if let Some(ident) = parse_ident(parser) {
-      let params = parser.repeating(parse_params);
+      let params = parser.maybe(parse_params);
 
       if parser.eat_tok(Token::Punc(Punc::Colon)).is_some() {
         if let Some(ret_type) = parse_ident_type(parser) {
           if let Some(stmt) = parse_stmt(parser) {
-            let stmt = Box::new(stmt);
-
             return Some(Stmt::FunDecl {
               ident,
               params,
               ret_type,
-              stmt,
+              stmt: Box::new(stmt),
             });
           }
         }
@@ -182,23 +184,20 @@ pub fn parse_fun_decl(parser: &mut Parser) -> Option<Stmt> {
 }
 
 pub fn parse_params(parser: &mut Parser) -> Option<Vec<IdentTyped>> {
-  if parser.eat_tok(Token::Punc(Punc::LeftParen)).is_some() {
-    let mut idents = Vec::new();
-
-    if let Some(first) = parse_ident_typed(parser) {
-      idents.push(first);
-
-      idents.append(&mut parser.repeating(|parser| {
-        if parser.eat_tok(Token::Punc(Punc::Comma)).is_some() {
-          parse_ident_typed(parser)
-        } else {
-          None
+  if parser.eat_type(Token::Punc(Punc::LeftParen)).is_some() {
+    let exprs = parser.until_is(
+      |parser| {
+        let expr = parse_ident_typed(parser);
+        if !parser.is_tok(Token::Punc(Punc::RightParen)) {
+          parser.eat_type(Token::Punc(Punc::Comma));
         }
-      }));
-    }
+        expr
+      },
+      Token::Punc(Punc::RightParen),
+    );
 
-    if parser.eat_tok(Token::Punc(Punc::RightParen)).is_some() {
-      return Some(idents);
+    if parser.eat_type(Token::Punc(Punc::RightParen)).is_some() {
+      return Some(exprs);
     }
   }
 
@@ -213,7 +212,7 @@ pub fn parse_import(parser: &mut Parser) -> Option<Stmt> {
       idents.push(first);
 
       idents.append(&mut parser.repeating(|parser| {
-        if parser.eat_tok(Token::Punc(Punc::Comma)).is_some() {
+        if parser.eat_type(Token::Punc(Punc::Comma)).is_some() {
           parse_ident_import(parser)
         } else {
           None
@@ -223,9 +222,11 @@ pub fn parse_import(parser: &mut Parser) -> Option<Stmt> {
       parser.eat_tok(Token::Keyword(Keyword::From))?;
     }
 
-    if let Some(Token::StrLit(from)) = parser.eat_type(Token::StrLit(String::new())) {
-      let from = from.to_owned();
-      return Some(Stmt::Import { idents, from });
+    if let Some(Token::StrLit(from)) = parser.eat_tok(Token::StrLit(String::new())) {
+      return Some(Stmt::Import {
+        idents,
+        from: from.to_owned(),
+      });
     }
   }
 
