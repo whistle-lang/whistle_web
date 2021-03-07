@@ -1,0 +1,9 @@
+[package]
+name = "whistle_parser"
+version = "0.1.0"
+authors = ["the Whistle authors"]
+edition = "2018"
+
+[dependencies]
+whistle_common = { path = "../common/" }
+whistle_ast = { path = "../ast/" }

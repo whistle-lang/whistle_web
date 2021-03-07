@@ -1,8 +1,11 @@
-#[macro_use]
+//#[macro_use]
 use wasm_bindgen::prelude::wasm_bindgen;
-use whistle_core::compiler::*;
-use whistle_core::lexer::*;
-use whistle_core::parser::*;
+//use whistle_compiler::*;
+//use whistle_ast::Grammar;
+//use whistle_common::TokenItem;
+use whistle_scripts::lexthing;
+use whistle_lexer::*;
+use whistle_parser::*;
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -26,22 +29,20 @@ pub fn lex(text: String) -> String {
 
     format!("{:?}", toks)
 }
+
+
 #[wasm_bindgen]
 pub fn parse(text: String) -> String {
-  let lexer = Lexer::new(&text);
-  let mut parser = Parser::from(lexer);
-  let ast = parse_grammar(&mut parser);
-  format!("{:#?}", ast)
+  let tokens = lexthing(&text);
+  let parser = &mut Parser::new(tokens);
+
+  match parse_all(parser) {
+    Ok(val) => {
+      format!("{:#?}", val)
+    }
+    Err(err) => {
+      format!("{:?}", err)
+    }
+  }
 }
 
-
-#[wasm_bindgen]
-pub fn compile(text: String) -> String {
-  let lexer = Lexer::new(&text);
-  let mut parser = Parser::from(lexer);
-  let stmts = parse_grammar(&mut parser);
-  let mut compiler = Compiler::new();
-  compile_program(&mut compiler, stmts);
-  let vec = test_main(&mut compiler);
-  format!("{:?}",vec)
-}

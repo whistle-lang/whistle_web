@@ -1,4 +1,0 @@
-# cargo build
-target/
-# wasm-pack
-pkg/

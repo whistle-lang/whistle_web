@@ -1,0 +1,15 @@
+export fun a(): i32 {
+  return 1
+}
+
+export fun b(): i64 {
+  return 2
+}
+
+export fun c(): u32 {
+  return 3
+}
+
+export fun d(): u64 {
+  return 4
+}

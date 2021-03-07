@@ -1,7 +1,7 @@
 [package]
-name = "wasabi"
-description = "A template repository for deno modules that want to use wasm"
-repository = "https://github.com/denosaurs/wasabi"
+name = "whistle"
+description = " whistle in the browser"
+repository = "https://github.com/whistle-lang/whistle_web"
 license = "MIT"
 version = "0.1.3"
 authors = ["Elias Sjögreen", "Filippo Rossi"]
@@ -14,8 +14,12 @@ crate-type = ["cdylib"]
 [dependencies]
 wasm-bindgen = "0.2.68"
 wee_alloc = { version = "0.4.5", optional = true }
-whistle_core = { path = "./src/core/" }
-whistle_engine = { path = "./src/engine/" }
+whistle_common = { path = "./src/common/" }
+whistle_lexer = { path = "./src/lexer/" }
+whistle_ast = { path = "./src/ast/" }
+whistle_parser = { path = "./src/parser/" }
+whistle_scripts = { path = "./src/scripts" }
+#whistle_compiler = { path = "./src/compiler/" }
 
 [profile.release]
 lto = true
