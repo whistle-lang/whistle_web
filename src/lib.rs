@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 //use whistle_compiler::*;
 //use whistle_ast::Grammar;
 //use whistle_common::TokenItem;
-use whistle_scripts::lexthing;
+use whistle_scripts::*;
 use whistle_lexer::*;
 use whistle_parser::*;
 #[cfg(feature = "wee_alloc")]
@@ -33,7 +33,7 @@ pub fn lex(text: String) -> String {
 
 #[wasm_bindgen]
 pub fn parse(text: String) -> String {
-  let tokens = lexthing(&text);
+  let tokens = lexthing(&text, false);
   let parser = &mut Parser::new(tokens);
 
   match parse_all(parser) {
@@ -46,3 +46,8 @@ pub fn parse(text: String) -> String {
   }
 }
 
+#[wasm_bindgen]
+pub fn compile(text: String) -> String{
+    let bytes = compilething(&text);
+    format!("{:#?}", &bytes[..])
+}

@@ -19,7 +19,7 @@ whistle_lexer = { path = "./src/lexer/" }
 whistle_ast = { path = "./src/ast/" }
 whistle_parser = { path = "./src/parser/" }
 whistle_scripts = { path = "./src/scripts" }
-#whistle_compiler = { path = "./src/compiler/" }
+whistle_compiler = { path = "./src/compiler/" }
 
 [profile.release]
 lto = true
